@@ -45,10 +45,10 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function updateProfile(fullName: string) {
+  async function updateProfile(fullName: string, avatarUrl?: string | null) {
     loading.value = true
     try {
-      const { data } = await api.put('/auth/profile', { fullName })
+      const { data } = await api.put('/auth/profile', { fullName, avatarUrl })
       user.value = data.data
       return data.data
     } finally {

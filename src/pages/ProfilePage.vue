@@ -3,11 +3,11 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { NButton, NInput, NIcon, useMessage, NSpin } from 'naive-ui'
 import { useAuthStore } from '@/stores/auth'
-import api from '@/services/api'
+import api, { uploadApi } from '@/services/api'
 import { 
   PersonOutline, MailOutline, CalendarOutline, PaperPlaneOutline, 
   LogOutOutline, PencilOutline, CloseOutline, CheckmarkOutline,
-  GlobeOutline
+  GlobeOutline, CameraOutline
 } from '@vicons/ionicons5'
 
 const auth = useAuthStore()
@@ -18,6 +18,94 @@ const telegramStatus = ref<{ linked: boolean; telegramUsername: string | null; l
 const isEditingName = ref(false)
 const editedName = ref('')
 const savingName = ref(false)
+const fileInput = ref<HTMLInputElement | null>(null)
+const uploadingAvatar = ref(false)
+
+function triggerAvatarSelection() {
+  fileInput.value?.click()
+}
+
+function compressImageToBlob(file: File, maxWidth = 256, maxHeight = 256, quality = 0.7): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let width = img.width
+        let height = img.height
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width)
+            width = maxWidth
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height)
+            height = maxHeight
+          }
+        }
+
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          resolve(file)
+          return
+        }
+
+        ctx.drawImage(img, 0, 0, width, height)
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob)
+          } else {
+            resolve(file)
+          }
+        }, 'image/jpeg', quality)
+      }
+      img.onerror = (err) => reject(err)
+      img.src = e.target?.result as string
+    }
+    reader.onerror = (err) => reject(err)
+    reader.readAsDataURL(file)
+  })
+}
+
+async function onFileSelected(event: Event) {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  // Limit avatar image size to 5MB
+  if (file.size > 5 * 1024 * 1024) {
+    message.error('Kích thước ảnh đại diện không vượt quá 5MB')
+    return
+  }
+
+  uploadingAvatar.value = true
+  try {
+    const compressedBlob = await compressImageToBlob(file)
+    const formData = new FormData()
+    formData.append('file', compressedBlob, 'avatar.jpg')
+
+    // Upload to Cloudinary via backend-render
+    const { data: uploadRes } = await uploadApi.post('/upload/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+
+    const cloudinaryUrl = uploadRes.data.url
+
+    // Update user profile avatar URL in Worker database
+    await auth.updateProfile(auth.user?.full_name || '', cloudinaryUrl)
+    message.success('Đã cập nhật ảnh đại diện thành công qua Cloudinary! 🎉')
+  } catch (err: any) {
+    message.error(err.response?.data?.error?.message || 'Cập nhật ảnh đại diện thất bại')
+  } finally {
+    uploadingAvatar.value = false
+    if (fileInput.value) fileInput.value.value = ''
+  }
+}
 
 onMounted(async () => {
   if (auth.user) {
@@ -98,12 +186,25 @@ function formatDate(dateStr: string | undefined) {
     <!-- Avatar & Profile card -->
     <div class="ef-card profile-card">
       <div class="profile-header">
-        <div class="profile-avatar-wrapper">
+        <div class="profile-avatar-wrapper" @click="triggerAvatarSelection" title="Thay đổi ảnh đại diện">
           <div class="profile-avatar">
-            {{ auth.user?.full_name?.charAt(0)?.toUpperCase() || 'U' }}
+            <n-spin :show="uploadingAvatar" size="small" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+              <img v-if="auth.user?.avatar_url" :src="auth.user.avatar_url" alt="Avatar" class="avatar-image" />
+              <span v-else>{{ auth.user?.full_name?.charAt(0)?.toUpperCase() || 'U' }}</span>
+              <div class="avatar-overlay">
+                <n-icon><CameraOutline /></n-icon>
+              </div>
+            </n-spin>
           </div>
           <div class="avatar-badge">✓</div>
         </div>
+        <input 
+          type="file" 
+          ref="fileInput" 
+          accept="image/*" 
+          style="display: none" 
+          @change="onFileSelected" 
+        />
         
         <div class="profile-info-block">
           <div v-if="!isEditingName" class="name-display-row">
@@ -478,5 +579,66 @@ function formatDate(dateStr: string | undefined) {
 .logout-btn {
   border-radius: var(--ef-radius-lg);
   font-weight: 600;
+}
+
+/* Avatar edit & overlay styles */
+.profile-avatar-wrapper {
+  position: relative;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.profile-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--ef-primary) 0%, #8B5CF6 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.8rem;
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.25);
+  border: 2px solid #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  color: white;
+  font-size: 1.2rem;
+}
+
+.profile-avatar-wrapper:hover .avatar-overlay {
+  opacity: 1;
+}
+
+/* For mobile touch screens, keep it slightly visible at the bottom */
+@media (max-width: 768px) {
+  .avatar-overlay {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.3);
+    height: 24px;
+    top: auto;
+    font-size: 0.85rem;
+  }
 }
 </style>

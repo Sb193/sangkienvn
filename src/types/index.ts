@@ -67,6 +67,9 @@ export interface Transaction {
   category_icon?: string
   category_color?: string
   warning?: string
+  payer_name?: string
+  creator_name?: string
+  group_name?: string
 }
 
 export interface TransactionParticipant {

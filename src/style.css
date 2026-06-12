@@ -186,3 +186,81 @@ img { max-width: 100%; height: auto; display: block; }
 @media (min-width: 769px) {
   .ef-hide-desktop { display: none !important; }
 }
+
+/* ─── Premium Button Classes ───────────────────────────────────────────── */
+.ef-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 10px 20px;
+  border-radius: var(--ef-radius-sm);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+  text-decoration: none;
+  font-family: inherit;
+}
+.ef-btn:active {
+  transform: scale(0.96);
+}
+
+.ef-btn-primary {
+  background: linear-gradient(135deg, var(--ef-primary), var(--ef-primary-hover));
+  color: white;
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);
+}
+.ef-btn-primary:hover {
+  box-shadow: 0 6px 16px rgba(6, 182, 212, 0.35);
+  filter: brightness(1.05);
+}
+
+.ef-btn-success {
+  background: linear-gradient(135deg, #34D399, var(--ef-success));
+  color: white;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+.ef-btn-success:hover {
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+  filter: brightness(1.05);
+}
+
+.ef-btn-danger {
+  background: linear-gradient(135deg, #FF6B6B, var(--ef-danger));
+  color: white;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+.ef-btn-danger:hover {
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.35);
+  filter: brightness(1.05);
+}
+
+.ef-btn-secondary {
+  background: var(--ef-surface-hover);
+  color: var(--ef-text-secondary);
+  border: 1px solid var(--ef-border);
+}
+.ef-btn-secondary:hover {
+  background: var(--ef-border);
+  color: var(--ef-text);
+}
+
+.ef-btn-sm {
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  border-radius: 8px;
+}
+
+.ef-btn-lg {
+  padding: 14px 24px;
+  font-size: 1.05rem;
+  border-radius: 14px;
+}
+
+.ef-btn-block {
+  width: 100%;
+}
+

@@ -32,10 +32,20 @@ export const useGroupsStore = defineStore('groups', () => {
   }
 
   async function joinByCode(joinCode: string) {
-    const { data } = await api.post('/groups/join', { joinCode })
+    const { data } = await api.post('/groups/join', { code: joinCode })
     await fetchGroups()
     return data.data
   }
 
-  return { groups, currentGroup, members, loading, fetchGroups, fetchGroupDetail, createGroup, joinByCode }
+  async function updateGroup(id: string, payload: { name?: string; description?: string; avatarUrl?: string | null }) {
+    const { data } = await api.patch(`/groups/${id}`, payload)
+    currentGroup.value = data.data
+    const idx = groups.value.findIndex(g => g.id === id)
+    if (idx !== -1) {
+      groups.value[idx] = data.data
+    }
+    return data.data
+  }
+
+  return { groups, currentGroup, members, loading, fetchGroups, fetchGroupDetail, createGroup, joinByCode, updateGroup }
 })

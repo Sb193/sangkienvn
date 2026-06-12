@@ -97,4 +97,17 @@ api.interceptors.response.use(
   }
 )
 
+export const uploadApi = axios.create({
+  baseURL: import.meta.env.VITE_UPLOAD_API_URL || 'http://localhost:3001/api/v1',
+  timeout: 30000,
+})
+
+uploadApi.interceptors.request.use((config) => {
+  const token = localStorage.getItem('accessToken')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
 export default api

@@ -1,19 +1,31 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { NInput, NButton, NDatePicker, useMessage, NIcon } from 'naive-ui'
+import { useRouter, useRoute } from 'vue-router'
+import { NInput, NDatePicker, useMessage, NIcon } from 'naive-ui'
 import { 
-  ArrowBackOutline, WalletOutline, CashOutline,
+  ArrowBackOutline, WalletOutline,
   CardOutline, GiftOutline, TrendingUpOutline, EllipsisHorizontalCircleOutline,
   RestaurantOutline, CarOutline, HomeOutline, FlashOutline, 
   GameControllerOutline, CartOutline, MedkitOutline, BookOutline,
-  PricetagOutline
+  PricetagOutline, CheckmarkOutline
 } from '@vicons/ionicons5'
 import { useTransactionsStore } from '@/stores/transactions'
+import { useGroupsStore } from '@/stores/groups'
+import { useAuthStore } from '@/stores/auth'
+import type { CreateTransactionPayload } from '@/types'
 
 const router = useRouter()
+const route = useRoute()
 const txStore = useTransactionsStore()
+const groupsStore = useGroupsStore()
+const authStore = useAuthStore()
 const message = useMessage()
+
+const groupId = computed(() => (route.query.groupId as string) || '')
+
+// Group Fund Transaction Type: 'deposit' = Đóng góp, 'withdraw' = Chi trả
+const groupTxType = ref<'deposit' | 'withdraw'>('deposit')
+const selectedContributorId = ref('')
 
 // Map string icon names from DB to Ionicons
 const iconMap: Record<string, any> = {
@@ -44,13 +56,30 @@ const form = ref({
   note: '',
 })
 
-onMounted(() => { txStore.fetchCategories() })
+onMounted(async () => {
+  txStore.fetchCategories()
+  if (groupId.value) {
+    try {
+      await groupsStore.fetchGroupDetail(groupId.value)
+      selectedContributorId.value = authStore.user?.id || groupsStore.members[0]?.user_id || ''
+    } catch {
+      message.error('Không tải được thông tin nhóm')
+    }
+  }
+})
 
-const categoryList = computed(() => txStore.categories
-  .filter((c) => c.type === form.value.transactionType)
-)
+const categoryList = computed(() => {
+  const desiredType = groupId.value
+    ? (groupTxType.value === 'deposit' ? 'income' : 'expense')
+    : form.value.transactionType
+  return txStore.categories.filter((c) => c.type === desiredType)
+})
 
 watch(() => form.value.transactionType, () => {
+  form.value.categoryId = null
+})
+
+watch(groupTxType, () => {
   form.value.categoryId = null
 })
 
@@ -83,37 +112,54 @@ async function handleSubmit() {
   
   let finalTitle = form.value.title.trim()
   if (!finalTitle) {
-    if (form.value.categoryId) {
-      const cat = txStore.categories.find(c => c.id === form.value.categoryId)
-      if (cat) {
-        finalTitle = cat.name
-      } else {
-        message.warning('Vui lòng nhập tiêu đề hoặc chọn danh mục')
-        return
-      }
+    const selectedCat = txStore.categories.find(c => c.id === form.value.categoryId)
+    if (selectedCat) {
+      finalTitle = selectedCat.name
     } else {
-      message.warning('Vui lòng nhập tiêu đề hoặc chọn danh mục')
+      message.warning('Vui lòng nhập tiêu đề hoặc chọn một danh mục')
       return
     }
   }
 
   try {
     const dateStr = new Date(form.value.transactionDate).toISOString().substring(0, 10)
-    await txStore.createTransaction({
-      title: finalTitle,
-      amount: form.value.amount,
-      categoryId: form.value.categoryId || undefined,
-      transactionType: form.value.transactionType,
-      transactionDate: dateStr,
-      note: form.value.note,
-    })
-    if (txStore.lastWarning) {
-      message.warning(txStore.lastWarning, { duration: 5000 })
+
+    if (groupId.value) {
+      // Group fund transaction via standard createTransaction (splitType is omitted/null)
+      const payload: CreateTransactionPayload = {
+        title: finalTitle,
+        amount: form.value.amount,
+        categoryId: form.value.categoryId || undefined,
+        transactionType: groupTxType.value === 'deposit' ? 'income' : 'expense',
+        transactionDate: dateStr,
+        note: form.value.note,
+        groupId: groupId.value,
+        payerUserId: groupTxType.value === 'deposit' ? selectedContributorId.value : authStore.user?.id,
+      }
+
+      await txStore.createTransaction(payload)
+      message.success('Thêm giao dịch quỹ nhóm thành công! 🎉')
+      router.push(`/groups/${groupId.value}`)
+    } else {
+      // Personal transaction
+      const payload: CreateTransactionPayload = {
+        title: finalTitle,
+        amount: form.value.amount,
+        categoryId: form.value.categoryId || undefined,
+        transactionType: form.value.transactionType,
+        transactionDate: dateStr,
+        note: form.value.note,
+      }
+
+      await txStore.createTransaction(payload)
+      if (txStore.lastWarning) {
+        message.warning(txStore.lastWarning, { duration: 5000 })
+      }
+      message.success('Thêm giao dịch thành công! 🎉')
+      router.push('/transactions')
     }
-    message.success('Thêm giao dịch thành công! 🎉')
-    router.push('/transactions')
   } catch (err: any) {
-    message.error(err.response?.data?.error?.message || 'Thêm giao dịch thất bại')
+    message.error(err.response?.data?.error?.message || 'Giao dịch thất bại')
   }
 }
 </script>
@@ -125,13 +171,29 @@ async function handleSubmit() {
       <button class="icon-btn" @click="router.back()">
         <n-icon size="24"><ArrowBackOutline /></n-icon>
       </button>
-      <h2>Giao dịch mới</h2>
+      <h2>{{ groupId ? 'Quản lý quỹ nhóm' : 'Giao dịch mới' }}</h2>
       <div style="width: 24px"></div> <!-- Spacer -->
     </header>
 
     <!-- Type Switcher -->
     <div class="type-switcher-wrap">
-      <div class="type-switcher">
+      <div class="type-switcher" v-if="groupId">
+        <button 
+          class="switch-btn" 
+          :class="{ active: groupTxType === 'withdraw' }"
+          @click="groupTxType = 'withdraw'"
+        >
+          Chi trả
+        </button>
+        <button 
+          class="switch-btn" 
+          :class="{ active: groupTxType === 'deposit', income: true }"
+          @click="groupTxType = 'deposit'"
+        >
+          Đóng góp
+        </button>
+      </div>
+      <div class="type-switcher" v-else>
         <button 
           class="switch-btn" 
           :class="{ active: form.transactionType === 'expense' }"
@@ -150,7 +212,7 @@ async function handleSubmit() {
     </div>
 
     <!-- Amount Input -->
-    <div class="amount-section" :class="form.transactionType">
+    <div class="amount-section" :class="groupId ? (groupTxType === 'deposit' ? 'income' : 'expense') : form.transactionType">
       <div class="currency-symbol" :style="{ fontSize: dynamicFontSize }">₫</div>
       <input 
         v-model="formattedAmount" 
@@ -166,11 +228,17 @@ async function handleSubmit() {
     <div class="details-card">
       <div class="input-group">
         <div class="input-icon"><n-icon><WalletOutline/></n-icon></div>
-        <n-input v-model:value="form.title" placeholder="Tiêu đề (VD: Ăn trưa, Đổ xăng...)" size="large" class="custom-input" :bordered="false" />
+        <n-input 
+          v-model:value="form.title" 
+          :placeholder="groupId ? 'Lý do (VD: Đóng quỹ tháng 6, Mua đồ liên hoan...)' : 'Tiêu đề (VD: Ăn trưa, Đổ xăng...)'" 
+          size="large" 
+          class="custom-input" 
+          :bordered="false" 
+        />
       </div>
       <div class="divider"></div>
 
-      <!-- Category Scrollable List -->
+      <!-- Categories (Always visible for both, filters by active switcher tab) -->
       <div class="category-scroll-container">
         <div 
           v-for="cat in categoryList" 
@@ -193,6 +261,26 @@ async function handleSubmit() {
       </div>
       <div class="divider"></div>
 
+      <!-- Group Contributor Selector (For Đóng góp/Deposit only) -->
+      <template v-if="groupId && groupTxType === 'deposit'">
+        <div class="split-section-item" style="padding: 12px 0;">
+          <label class="split-label" style="font-size: 0.9rem; font-weight: 600; color: var(--ef-text-secondary); display: block; margin-bottom: 8px;">Người đóng đóng góp</label>
+          <div class="payer-select-scroll">
+            <div 
+              v-for="m in groupsStore.members" 
+              :key="m.user_id"
+              class="payer-option-item"
+              :class="{ selected: selectedContributorId === m.user_id }"
+              @click="selectedContributorId = m.user_id"
+            >
+              <div class="payer-avatar">{{ m.full_name?.charAt(0)?.toUpperCase() }}</div>
+              <span class="payer-name">{{ m.user_id === authStore.user?.id ? 'Bạn' : m.full_name }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="divider"></div>
+      </template>
+
       <div class="input-group note-group">
         <div class="input-icon" style="font-size: 1.2rem;">📝</div>
         <n-input v-model:value="form.note" type="textarea" placeholder="Ghi chú thêm (Không bắt buộc)..." class="custom-input" :bordered="false" :autosize="{ minRows: 2, maxRows: 4 }" />
@@ -201,7 +289,12 @@ async function handleSubmit() {
 
     <!-- Submit Button -->
     <div class="submit-section">
-      <button class="submit-btn" :class="form.transactionType" @click="handleSubmit">
+      <button 
+        class="ef-btn ef-btn-lg ef-btn-block" 
+        :class="(groupId ? groupTxType === 'deposit' : form.transactionType === 'income') ? 'ef-btn-success' : 'ef-btn-danger'" 
+        @click="handleSubmit"
+      >
+        <n-icon size="20"><CheckmarkOutline /></n-icon>
         Lưu giao dịch
       </button>
     </div>
@@ -395,34 +488,60 @@ async function handleSubmit() {
   transition: color 0.2s;
 }
 
+/* Contributor scroll selection */
+.payer-select-scroll {
+  display: flex;
+  overflow-x: auto;
+  gap: 12px;
+  padding: 4px 0;
+  scrollbar-width: none;
+}
+.payer-select-scroll::-webkit-scrollbar {
+  display: none;
+}
+.payer-option-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 100px;
+  background: var(--ef-bg-light);
+  border: 1px solid var(--ef-border-light);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.payer-option-item.selected {
+  background: var(--ef-primary-light);
+  border-color: var(--ef-primary);
+  color: var(--ef-primary);
+  font-weight: 600;
+}
+.payer-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--ef-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.payer-name {
+  font-size: 0.85rem;
+}
+
 /* Submit Button */
 .submit-section {
   position: fixed;
-  bottom: calc(var(--ef-bottom-nav-height) + 16px);
+  bottom: calc(var(--ef-bottom-nav-height) + 35px);
   left: 16px;
   right: 16px;
   display: flex;
   justify-content: center;
   z-index: 10;
-}
-.submit-btn {
-  width: 100%;
-  max-width: 600px;
-  padding: 16px;
-  border-radius: 100px;
-  border: none;
-  background: linear-gradient(135deg, #FF6B6B, var(--ef-danger));
-  color: white;
-  font-size: 1.1rem;
-  font-weight: 700;
-  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-.submit-btn:active { transform: scale(0.96); }
-.submit-btn.income {
-  background: linear-gradient(135deg, #34D399, var(--ef-success));
-  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
 }
 
 @media (min-width: 769px) {

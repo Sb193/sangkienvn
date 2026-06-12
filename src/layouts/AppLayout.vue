@@ -29,7 +29,6 @@ const sidebarItems = [
   { key: 'Dashboard', icon: HomeOutline, label: 'Dashboard', path: '/' },
   { key: 'Transactions', icon: WalletOutline, label: 'Giao dịch', path: '/transactions' },
   { key: 'Groups', icon: PeopleOutline, label: 'Nhóm', path: '/groups' },
-  { key: 'Budgets', icon: ReceiptOutline, label: 'Ngân sách', path: '/budgets' },
   { key: 'Reports', icon: StatsChartOutline, label: 'Báo cáo', path: '/reports' },
   { key: 'Notifications', icon: NotificationsOutline, label: 'Thông báo', path: '/notifications', badge: true },
   { key: 'Profile', icon: PersonOutline, label: 'Tài khoản', path: '/profile' },
@@ -40,12 +39,18 @@ const bottomNavItems = [
   { key: 'Transactions', icon: WalletOutline, label: 'Giao dịch', path: '/transactions' },
   { key: 'AddTransaction', icon: AddCircleOutline, label: 'Thêm', path: '/transactions/new', fab: true },
   { key: 'Groups', icon: PeopleOutline, label: 'Nhóm', path: '/groups' },
-  { key: 'Notifications', icon: NotificationsOutline, label: 'Thông báo', path: '/notifications', badge: true },
+  { key: 'Reports', icon: StatsChartOutline, label: 'Báo cáo', path: '/reports' },
 ]
 
 const activeKey = computed(() => route.name as string)
 
 function navigate(path: string) {
+  if (path === '/transactions/new') {
+    if (route.name === 'GroupDetail' && route.params.id) {
+      router.push(`/transactions/new?groupId=${route.params.id}`)
+      return
+    }
+  }
   router.push(path)
 }
 
@@ -57,6 +62,27 @@ async function handleLogout() {
 
 <template>
   <div class="app-layout">
+    <!-- Mobile Header -->
+    <header class="mobile-header ef-hide-desktop">
+      <div class="mobile-header__brand" @click="navigate('/')">
+        <img src="/logo-light.svg" alt="ExpenseFlow Logo" class="mobile-header__logo" />
+      </div>
+      <div class="mobile-header__actions">
+        <!-- Notification with Badge -->
+        <a class="mobile-header__action" @click="navigate('/notifications')">
+          <n-badge v-if="notifs.unreadCount > 0" :value="notifs.unreadCount" :max="99" :offset="[-4, 4]">
+            <n-icon :size="24" color="var(--ef-text-secondary)"><NotificationsOutline /></n-icon>
+          </n-badge>
+          <n-icon v-else :size="24" color="var(--ef-text-secondary)"><NotificationsOutline /></n-icon>
+        </a>
+        <!-- Profile/Account Avatar -->
+        <div class="mobile-header__avatar" @click="navigate('/profile')">
+          <img v-if="auth.user?.avatar_url" :src="auth.user.avatar_url" alt="Avatar" class="avatar-img-small" />
+          <span v-else>{{ auth.displayName?.charAt(0)?.toUpperCase() || 'U' }}</span>
+        </div>
+      </div>
+    </header>
+
     <!-- Desktop Sidebar -->
     <aside class="sidebar ef-hide-mobile">
       <div class="sidebar__brand" @click="navigate('/')">
@@ -79,7 +105,10 @@ async function handleLogout() {
 
       <div class="sidebar__footer">
         <div class="sidebar__user">
-          <div class="sidebar__avatar">{{ auth.displayName?.charAt(0)?.toUpperCase() }}</div>
+          <div class="sidebar__avatar">
+            <img v-if="auth.user?.avatar_url" :src="auth.user.avatar_url" alt="Avatar" class="avatar-img-small" />
+            <span v-else>{{ auth.displayName?.charAt(0)?.toUpperCase() }}</span>
+          </div>
           <div class="sidebar__user-info">
             <div class="sidebar__user-name">{{ auth.displayName }}</div>
             <div class="sidebar__user-email">{{ auth.user?.email }}</div>
@@ -114,10 +143,7 @@ async function handleLogout() {
           <n-icon :size="28"><component :is="item.icon" /></n-icon>
         </div>
         <template v-else>
-          <n-badge v-if="item.badge && notifs.unreadCount > 0" :value="notifs.unreadCount" :max="99" :offset="[-4, 4]">
-            <n-icon :size="22"><component :is="item.icon" /></n-icon>
-          </n-badge>
-          <n-icon v-else :size="22"><component :is="item.icon" /></n-icon>
+          <n-icon :size="22"><component :is="item.icon" /></n-icon>
           <span class="bottom-nav__label">{{ item.label }}</span>
         </template>
       </a>
@@ -135,7 +161,8 @@ async function handleLogout() {
 .main-content {
   flex: 1;
   padding: 24px;
-  padding-bottom: calc(var(--ef-bottom-nav-height) + 32px);
+  padding-top: calc(56px + 16px);
+  padding-bottom: calc(var(--ef-bottom-nav-height) + 80px);
   max-width: 1000px;
   margin: 0 auto;
   width: 100%;
@@ -155,10 +182,6 @@ async function handleLogout() {
   z-index: 100;
   padding: 24px 16px;
   box-shadow: 1px 0 10px rgba(0,0,0,0.02);
-}
-
-.sidebar ~ .main-content {
-  padding-bottom: 32px;
 }
 
 .sidebar__brand {
@@ -352,5 +375,69 @@ async function handleLogout() {
   .main-content {
     padding: 40px 48px;
   }
+}
+
+/* ─── Mobile Header ────────────────────────────────────────────────── */
+.mobile-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--ef-border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 200;
+}
+
+.mobile-header__brand {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.mobile-header__logo {
+  height: 28px;
+  width: auto;
+}
+
+.mobile-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.mobile-header__action {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-header__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--ef-primary), #3B82F6);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.2);
+}
+
+.avatar-img-small {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
 }
 </style>
