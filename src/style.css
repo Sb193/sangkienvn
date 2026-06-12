@@ -1,79 +1,188 @@
+/* ─── ExpenseFlow Premium Design System ──────────────────────────────────── */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  /* Colors - Matching Cyan Logo */
+  --ef-primary: #06B6D4; /* Cyan 500 */
+  --ef-primary-hover: #0891B2; /* Cyan 600 */
+  --ef-primary-light: #ECFEFF; /* Cyan 50 */
+  --ef-primary-alpha: rgba(6, 182, 212, 0.15);
+  
+  --ef-success: #10B981; /* Emerald 500 */
+  --ef-success-light: #ECFDF5;
+  --ef-warning: #F59E0B; /* Amber 500 */
+  --ef-warning-light: #FFFBEB;
+  --ef-danger: #EF4444; /* Red 500 */
+  --ef-danger-light: #FEF2F2;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  /* Surfaces & Backgrounds */
+  --ef-bg: #F8FAFC; /* Slate 50 */
+  --ef-surface: #FFFFFF;
+  --ef-surface-hover: #F1F5F9; /* Slate 100 */
+  --ef-border: #E2E8F0; /* Slate 200 */
+  --ef-border-light: #F1F5F9;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Typography */
+  --ef-text: #0F172A; /* Slate 900 */
+  --ef-text-secondary: #475569; /* Slate 600 */
+  --ef-text-tertiary: #94A3B8; /* Slate 400 */
+  --ef-text-inverse: #FFFFFF;
+
+  /* Spacing & Shape */
+  --ef-radius: 16px;
+  --ef-radius-sm: 10px;
+  --ef-radius-lg: 24px;
+  --ef-radius-xl: 32px;
+
+  /* Refined Premium Shadows */
+  --ef-shadow-sm: 0 2px 4px rgba(15,23,42,0.04), 0 1px 2px rgba(15,23,42,0.02);
+  --ef-shadow: 0 10px 25px -5px rgba(15,23,42,0.05), 0 8px 10px -6px rgba(15,23,42,0.01);
+  --ef-shadow-lg: 0 20px 40px -10px rgba(15,23,42,0.08), 0 10px 15px -5px rgba(15,23,42,0.03);
+  --ef-shadow-glow: 0 8px 24px var(--ef-primary-alpha);
+
+  /* Layout */
+  --ef-nav-height: 64px;
+  --ef-bottom-nav-height: 72px;
+  --ef-sidebar-width: 280px;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+/* ─── Global Reset & Base ──────────────────────────────────────────────── */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
-a:hover {
-  color: #535bf2;
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-.card {
-  padding: 2em;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: var(--ef-bg);
+  color: var(--ef-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  min-height: 100vh;
+  max-width: 100%;
+  text-align: left;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+a {
+  color: var(--ef-primary);
+  text-decoration: none;
+  transition: color 0.25s ease;
+}
+a:hover { color: var(--ef-primary-hover); }
+
+img { max-width: 100%; height: auto; display: block; }
+
+/* ─── UI Utility Classes ───────────────────────────────────────────────── */
+.ef-card {
+  background: var(--ef-surface);
+  border-radius: var(--ef-radius);
+  box-shadow: var(--ef-shadow-sm);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  padding: 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+.ef-card:hover {
+  box-shadow: var(--ef-shadow);
+  transform: translateY(-2px);
+  border-color: var(--ef-border);
+}
+
+.ef-page-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--ef-text);
+  margin-bottom: 28px;
+  letter-spacing: -0.02em;
+}
+
+.ef-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.ef-badge--success { background: var(--ef-success-light); color: var(--ef-success); }
+.ef-badge--warning { background: var(--ef-warning-light); color: var(--ef-warning); }
+.ef-badge--danger  { background: var(--ef-danger-light);  color: var(--ef-danger); }
+.ef-badge--primary { background: var(--ef-primary-light); color: var(--ef-primary); }
+
+.ef-empty {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--ef-text-tertiary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.ef-empty__icon { font-size: 3.5rem; margin-bottom: 16px; opacity: 0.7; }
+.ef-empty__text { font-size: 1rem; font-weight: 500; }
+
+/* ─── Skeleton Loader ──────────────────────────────────────────────────── */
+.ef-skeleton {
+  background: linear-gradient(90deg, #F1F5F9 25%, #F8FAFC 50%, #F1F5F9 75%);
+  background-size: 200% 100%;
+  animation: ef-shimmer 1.5s infinite linear;
+  border-radius: var(--ef-radius-sm);
+}
+@keyframes ef-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─── Premium Animations ───────────────────────────────────────────────── */
+.ef-fade-enter-active,
+.ef-fade-leave-active {
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ef-fade-enter-from,
+.ef-fade-leave-to {
+  opacity: 0;
+}
+
+.ef-slide-up-enter-active,
+.ef-slide-up-leave-active {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ef-slide-up-enter-from {
+  opacity: 0;
+  transform: translateY(24px) scale(0.98);
+}
+.ef-slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(-12px) scale(0.98);
+}
+
+/* ─── Glassmorphism Utilities ──────────────────────────────────────────── */
+.ef-glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* ─── Mobile-first responsive utilities ────────────────────────────────── */
+@media (max-width: 768px) {
+  .ef-hide-mobile { display: none !important; }
+  .ef-page-title { font-size: 1.5rem; margin-bottom: 20px; }
+  .ef-card { padding: 16px; border-radius: var(--ef-radius-sm); }
+}
+@media (min-width: 769px) {
+  .ef-hide-desktop { display: none !important; }
 }

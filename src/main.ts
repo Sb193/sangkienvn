@@ -1,5 +1,20 @@
 import { createApp } from 'vue'
-import './style.css'
+import { createPinia } from 'pinia'
+import naive from 'naive-ui'
 import App from './App.vue'
+import router from './router'
+import { useAuthStore } from './stores/auth'
+import './style.css'
 
-createApp(App).mount('#app')
+const app = createApp(App)
+const pinia = createPinia()
+
+app.use(pinia)
+app.use(router)
+app.use(naive)
+
+// Initialize auth state before mounting
+const auth = useAuthStore()
+auth.init()
+
+app.mount('#app')
