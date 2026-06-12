@@ -21,7 +21,7 @@ const savingName = ref(false)
 
 onMounted(async () => {
   if (auth.user) {
-    editedName.value = auth.user.fullName || ''
+    editedName.value = auth.user.full_name || ''
   }
   try {
     const { data } = await api.get('/settings/telegram')
@@ -30,7 +30,7 @@ onMounted(async () => {
 })
 
 function startEdit() {
-  editedName.value = auth.user?.fullName || ''
+  editedName.value = auth.user?.full_name || ''
   isEditingName.value = true
 }
 
@@ -100,14 +100,14 @@ function formatDate(dateStr: string | undefined) {
       <div class="profile-header">
         <div class="profile-avatar-wrapper">
           <div class="profile-avatar">
-            {{ auth.user?.fullName?.charAt(0)?.toUpperCase() || 'U' }}
+            {{ auth.user?.full_name?.charAt(0)?.toUpperCase() || 'U' }}
           </div>
           <div class="avatar-badge">✓</div>
         </div>
         
         <div class="profile-info-block">
           <div v-if="!isEditingName" class="name-display-row">
-            <h2 class="profile-name">{{ auth.user?.fullName }}</h2>
+            <h2 class="profile-name">{{ auth.user?.full_name }}</h2>
             <button class="edit-btn" @click="startEdit" title="Sửa tên">
               <n-icon><PencilOutline /></n-icon>
             </button>
