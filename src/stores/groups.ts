@@ -47,5 +47,17 @@ export const useGroupsStore = defineStore('groups', () => {
     return data.data
   }
 
-  return { groups, currentGroup, members, loading, fetchGroups, fetchGroupDetail, createGroup, joinByCode, updateGroup }
+  async function leaveGroup(id: string) {
+    await api.post(`/groups/${id}/leave`)
+    groups.value = groups.value.filter(g => g.id !== id)
+    if (currentGroup.value?.id === id) currentGroup.value = null
+  }
+
+  async function deleteGroup(id: string) {
+    await api.delete(`/groups/${id}`)
+    groups.value = groups.value.filter(g => g.id !== id)
+    if (currentGroup.value?.id === id) currentGroup.value = null
+  }
+
+  return { groups, currentGroup, members, loading, fetchGroups, fetchGroupDetail, createGroup, joinByCode, updateGroup, leaveGroup, deleteGroup }
 })

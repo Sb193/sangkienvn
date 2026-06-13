@@ -14,7 +14,7 @@ import {
   GameControllerOutline, CartOutline, MedkitOutline, BookOutline,
   PricetagOutline, TrashOutline, CalendarOutline, LocationOutline,
   PeopleOutline, WalletOutline, DocumentTextOutline, CameraOutline,
-  FunnelOutline
+  FunnelOutline, LogOutOutline
 } from '@vicons/ionicons5'
 import api, { uploadApi } from '@/services/api'
 import type { GroupFund, FundTransaction } from '@/types'
@@ -162,6 +162,35 @@ async function handleDelete(txId: string) {
     ])
   } catch (err: any) {
     message.error('Xóa giao dịch thất bại')
+  }
+}
+
+const isDeletingGroup = ref(false)
+const isLeavingGroup = ref(false)
+
+async function handleLeaveGroup() {
+  isLeavingGroup.value = true
+  try {
+    await groupsStore.leaveGroup(groupId)
+    message.success('Đã rời nhóm thành công')
+    router.replace('/groups')
+  } catch (err: any) {
+    message.error(err.response?.data?.error?.message || 'Rời nhóm thất bại')
+  } finally {
+    isLeavingGroup.value = false
+  }
+}
+
+async function handleDeleteGroup() {
+  isDeletingGroup.value = true
+  try {
+    await groupsStore.deleteGroup(groupId)
+    message.success('Đã xóa nhóm thành công')
+    router.replace('/groups')
+  } catch (err: any) {
+    message.error(err.response?.data?.error?.message || 'Xóa nhóm thất bại')
+  } finally {
+    isDeletingGroup.value = false
   }
 }
 
@@ -790,6 +819,59 @@ const getIconComponent = (iconName: string | undefined | null) => {
               </div>
               <span class="ef-badge ef-badge--primary">{{ m.role }}</span>
             </div>
+          </div>
+
+          <!-- Danger Zone -->
+          <div class="danger-zone ef-card" style="margin-top: 24px; border: 1.5px solid var(--ef-danger); background: rgba(239,68,68,0.04);">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+              <span style="font-size: 1.1rem;">⚠️</span>
+              <span style="font-weight: 700; color: var(--ef-danger); font-size: 0.95rem;">Khu vực nguy hiểm</span>
+            </div>
+            <p style="font-size: 0.82rem; color: var(--ef-text-secondary); margin: 0 0 16px 0; line-height: 1.5;">
+              <span v-if="isOwner">Xóa nhóm sẽ xóa vĩnh viễn tất cả dữ liệu giao dịch, quỹ và lịch sử hoạt động. Hành động này không thể hoàn tác.</span>
+              <span v-else>Sau khi rời nhóm, bạn sẽ không còn quyền truy cập vào dữ liệu nhóm. Bạn cần mã mời để tham gia lại.</span>
+            </p>
+
+            <!-- Owner: Delete Group -->
+            <n-popconfirm
+              v-if="isOwner"
+              @positive-click="handleDeleteGroup"
+              positive-text="Xóa nhóm"
+              negative-text="Hủy"
+              positive-button-props="{ type: 'error' }"
+            >
+              <template #trigger>
+                <button
+                  class="ef-btn ef-btn-sm"
+                  style="background: var(--ef-danger); color: #fff; border: none; width: 100%; padding: 12px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;"
+                  :disabled="isDeletingGroup"
+                >
+                  <n-icon><TrashOutline /></n-icon>
+                  {{ isDeletingGroup ? 'Đang xóa nhóm...' : 'Xóa nhóm' }}
+                </button>
+              </template>
+              Bạn có chắc muốn xóa nhóm "{{ groupsStore.currentGroup?.name }}"? Tất cả dữ liệu sẽ bị xóa vĩnh viễn.
+            </n-popconfirm>
+
+            <!-- Non-owner: Leave Group -->
+            <n-popconfirm
+              v-else
+              @positive-click="handleLeaveGroup"
+              positive-text="Rời nhóm"
+              negative-text="Hủy"
+            >
+              <template #trigger>
+                <button
+                  class="ef-btn ef-btn-sm"
+                  style="background: transparent; color: var(--ef-danger); border: 1.5px solid var(--ef-danger); width: 100%; padding: 12px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;"
+                  :disabled="isLeavingGroup"
+                >
+                  <n-icon><LogOutOutline /></n-icon>
+                  {{ isLeavingGroup ? 'Đang rời nhóm...' : 'Rời khỏi nhóm' }}
+                </button>
+              </template>
+              Bạn có chắc muốn rời khỏi nhóm "{{ groupsStore.currentGroup?.name }}"?
+            </n-popconfirm>
           </div>
         </n-tab-pane>
       </n-tabs>
