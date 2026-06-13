@@ -62,8 +62,8 @@ async function handleRegister() {
 
   try {
     await auth.register(form.value)
-    message.success('Đăng ký tài khoản thành công! 🎉')
-    router.push('/')
+    message.success('Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản. ✉️')
+    router.push('/login')
   } catch (err: any) {
     let errMsg = err.response?.data?.error?.message || err.message || 'Đăng ký thất bại'
     

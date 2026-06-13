@@ -14,6 +14,18 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/pages/RegisterPage.vue'),
     meta: { guest: true },
   },
+  {
+    path: '/forgot-password',
+    name: 'ForgotPassword',
+    component: () => import('@/pages/ForgotPasswordPage.vue'),
+    meta: { guest: true },
+  },
+  {
+    path: '/verify-email',
+    name: 'VerifyEmail',
+    component: () => import('@/pages/VerifyEmailPage.vue'),
+    meta: { guest: true },
+  },
 
   // ─── App (Main Layout) ─────────────────────────────────────────────────
   {
