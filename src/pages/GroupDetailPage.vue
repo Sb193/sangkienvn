@@ -45,6 +45,7 @@ const editedGroupDesc = ref('')
 const savingSettings = ref(false)
 
 const showDetailModal = ref(false)
+const showDeleteConfirmModal = ref(false)
 const selectedTxDetails = ref<any>(null)
 const loadingDetails = ref(false)
 
@@ -153,6 +154,7 @@ async function handleDelete(txId: string) {
   try {
     await txStore.deleteTransaction(txId)
     message.success('Đã xóa giao dịch thành công')
+    showDeleteConfirmModal.value = false
     showDetailModal.value = false
     // refresh list
     await Promise.all([
@@ -982,25 +984,53 @@ const getIconComponent = (iconName: string | undefined | null) => {
 
         <template #footer>
           <div class="modal-footer-actions">
-            <n-popconfirm
-              v-if="selectedTxDetails"
-              @positive-click="handleDelete(selectedTxDetails.id)"
-              positive-text="Xóa"
-              negative-text="Hủy"
+            <n-button 
+              v-if="selectedTxDetails" 
+              type="error" 
+              ghost
+              @click="showDeleteConfirmModal = true"
             >
-              <template #trigger>
-                <n-button type="error" ghost>
-                  <template #icon>
-                    <n-icon><TrashOutline /></n-icon>
-                  </template>
-                  Xóa giao dịch
-                </n-button>
+              <template #icon>
+                <n-icon><TrashOutline /></n-icon>
               </template>
-              Bạn chắc chắn muốn xóa giao dịch này chứ? Hành động này không thể hoàn tác.
-            </n-popconfirm>
+              Xóa giao dịch
+            </n-button>
             <n-button secondary @click="showDetailModal = false">Đóng</n-button>
           </div>
         </template>
+      </n-card>
+    </n-modal>
+
+    <!-- Custom Delete Confirmation Modal (Mobile-friendly Dialog Card) -->
+    <n-modal v-model:show="showDeleteConfirmModal">
+      <n-card
+        style="width: 340px; max-width: 90vw; border-radius: 20px; text-align: center; border: 1px solid var(--ef-border-light); box-shadow: var(--ef-shadow-lg);"
+        :bordered="false"
+        size="medium"
+        role="dialog"
+        aria-modal="true"
+      >
+        <div style="font-size: 3.5rem; margin-bottom: 8px; line-height: 1;">⚠️</div>
+        <h3 style="margin: 0 0 8px 0; font-size: 1.2rem; font-weight: 700; color: var(--ef-text);">Xóa giao dịch?</h3>
+        <p style="margin: 0 0 24px 0; font-size: 0.88rem; color: var(--ef-text-secondary); line-height: 1.5; padding: 0 8px;">
+          Bạn có chắc chắn muốn xóa giao dịch này không? Hành động này không thể hoàn tác.
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <button 
+            class="ef-btn" 
+            style="background: var(--ef-danger); color: white; border: none; width: 100%; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: background 0.2s;"
+            @click="handleDelete(selectedTxDetails.id)"
+          >
+            Xóa vĩnh viễn
+          </button>
+          <button 
+            class="ef-btn ef-btn-secondary" 
+            style="width: 100%; padding: 14px; border-radius: 12px; font-weight: 600; font-size: 0.95rem; cursor: pointer;"
+            @click="showDeleteConfirmModal = false"
+          >
+            Hủy bỏ
+          </button>
+        </div>
       </n-card>
     </n-modal>
   </div>
