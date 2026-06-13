@@ -155,8 +155,11 @@ async function handleDelete(txId: string) {
     message.success('Đã xóa giao dịch thành công')
     showDetailModal.value = false
     // refresh list
-    await txStore.fetchTransactions({ groupId })
-    await fetchReports()
+    await Promise.all([
+      fetchFund(),
+      txStore.fetchTransactions({ groupId }),
+      fetchReports()
+    ])
   } catch (err: any) {
     message.error('Xóa giao dịch thất bại')
   }
