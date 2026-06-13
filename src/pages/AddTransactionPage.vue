@@ -23,8 +23,8 @@ const message = useMessage()
 
 const groupId = computed(() => (route.query.groupId as string) || '')
 
-// Group Fund Transaction Type: 'deposit' = Đóng góp, 'withdraw' = Chi trả
-const groupTxType = ref<'deposit' | 'withdraw'>('deposit')
+// Group Fund Transaction Type: 'deposit' = Đóng góp, 'withdraw' = Chi trả, 'debt' = Ghi nợ/Tạm ứng
+const groupTxType = ref<'deposit' | 'withdraw' | 'debt'>('deposit')
 const selectedContributorId = ref('')
 
 // Map string icon names from DB to Ionicons
@@ -134,7 +134,8 @@ async function handleSubmit() {
         transactionDate: dateStr,
         note: form.value.note,
         groupId: groupId.value,
-        payerUserId: groupTxType.value === 'deposit' ? selectedContributorId.value : authStore.user?.id,
+        payerUserId: (groupTxType.value === 'deposit' || groupTxType.value === 'debt') ? selectedContributorId.value : authStore.user?.id,
+        isFundDebt: groupTxType.value === 'debt' ? true : undefined,
       }
 
       await txStore.createTransaction(payload)
@@ -191,6 +192,13 @@ async function handleSubmit() {
           @click="groupTxType = 'deposit'"
         >
           Đóng góp
+        </button>
+        <button 
+          class="switch-btn" 
+          :class="{ active: groupTxType === 'debt' }"
+          @click="groupTxType = 'debt'"
+        >
+          Tạm ứng
         </button>
       </div>
       <div class="type-switcher" v-else>
@@ -261,10 +269,12 @@ async function handleSubmit() {
       </div>
       <div class="divider"></div>
 
-      <!-- Group Contributor Selector (For Đóng góp/Deposit only) -->
-      <template v-if="groupId && groupTxType === 'deposit'">
+      <!-- Group Contributor Selector (For Đóng góp/Deposit or Tạm ứng/Debt) -->
+      <template v-if="groupId && (groupTxType === 'deposit' || groupTxType === 'debt')">
         <div class="split-section-item" style="padding: 12px 0;">
-          <label class="split-label" style="font-size: 0.9rem; font-weight: 600; color: var(--ef-text-secondary); display: block; margin-bottom: 8px;">Người đóng đóng góp</label>
+          <label class="split-label" style="font-size: 0.9rem; font-weight: 600; color: var(--ef-text-secondary); display: block; margin-bottom: 8px;">
+            {{ groupTxType === 'deposit' ? 'Người đóng góp' : 'Thành viên tạm ứng' }}
+          </label>
           <div class="payer-select-scroll">
             <div 
               v-for="m in groupsStore.members" 

@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useEventListener } from '@vueuse/core'
 import { useRouter } from 'vue-router'
 import { 
   NButton, NSpin, NEmpty, NIcon, NModal, NCard, NTag, 
-  NPopconfirm, useMessage, NDescriptions, NDescriptionsItem 
+  NPopconfirm, useMessage, NDescriptions, NDescriptionsItem,
+  NInput, NDatePicker, NSelect, NRadioGroup, NRadioButton
 } from 'naive-ui'
 import { useTransactionsStore } from '@/stores/transactions'
 import api from '@/services/api'
@@ -12,8 +14,10 @@ import {
   RestaurantOutline, CarOutline, HomeOutline, FlashOutline, 
   GameControllerOutline, CartOutline, MedkitOutline, BookOutline,
   PricetagOutline, TrashOutline, CalendarOutline, LocationOutline,
-  PeopleOutline, WalletOutline, DocumentTextOutline, AddOutline
+  PeopleOutline, WalletOutline, DocumentTextOutline, AddOutline,
+  FunnelOutline
 } from '@vicons/ionicons5'
+import { computed } from 'vue'
 
 const router = useRouter()
 const message = useMessage()
@@ -23,7 +27,74 @@ const showDetailModal = ref(false)
 const selectedTxDetails = ref<any>(null)
 const loadingDetails = ref(false)
 
-onMounted(() => { txStore.fetchTransactions() })
+const showFilterModal = ref(false)
+const searchQuery = ref('')
+const transactionTypeFilter = ref<'all' | 'income' | 'expense'>('all')
+const startDate = ref<number | null>(null)
+const endDate = ref<number | null>(null)
+
+const PAGE_SIZE = 20
+const loadingMore = ref(false)
+
+const hasActiveFilters = computed(() => {
+  return !!(searchQuery.value.trim() || transactionTypeFilter.value !== 'all' || startDate.value || endDate.value)
+})
+
+function buildFilters(limit = PAGE_SIZE, offset = 0) {
+  const filters: Record<string, any> = { limit, offset }
+  if (searchQuery.value.trim()) {
+    filters.search = searchQuery.value.trim()
+  }
+  if (transactionTypeFilter.value !== 'all') {
+    filters.transactionType = transactionTypeFilter.value
+  }
+  if (startDate.value) {
+    filters.startDate = new Date(startDate.value).toISOString().substring(0, 10)
+  }
+  if (endDate.value) {
+    filters.endDate = new Date(endDate.value).toISOString().substring(0, 10)
+  }
+  return filters
+}
+
+async function applyFilters() {
+  await txStore.fetchTransactions(buildFilters(PAGE_SIZE, 0), false)
+  showFilterModal.value = false
+}
+
+async function clearFilters() {
+  searchQuery.value = ''
+  transactionTypeFilter.value = 'all'
+  startDate.value = null
+  endDate.value = null
+  await txStore.fetchTransactions({ limit: PAGE_SIZE, offset: 0 }, false)
+  showFilterModal.value = false
+}
+
+async function loadMoreTransactions() {
+  if (loadingMore.value || !txStore.hasMore) return
+  loadingMore.value = true
+  try {
+    const filters = buildFilters(PAGE_SIZE, txStore.transactions.length)
+    await txStore.fetchTransactions(filters, true)
+  } finally {
+    loadingMore.value = false
+  }
+}
+
+useEventListener(window, 'scroll', () => {
+  const scrollTop = window.scrollY || document.documentElement.scrollTop
+  const windowHeight = window.innerHeight
+  const docHeight = document.documentElement.scrollHeight
+  
+  if (scrollTop + windowHeight >= docHeight - 150) {
+    loadMoreTransactions()
+  }
+})
+
+onMounted(() => {
+  txStore.fetchTransactions({ limit: PAGE_SIZE, offset: 0 }, false)
+})
 
 function formatMoney(amount: any) {
   const num = Number(amount)
@@ -79,15 +150,94 @@ const getIconComponent = (iconName: string | undefined | null) => {
 
 <template>
   <div>
-    <div class="page-header">
-      <h1 class="ef-page-title">Giao dịch</h1>
-      <button class="ef-btn ef-btn-primary ef-btn-sm" @click="router.push('/transactions/new')">
-        <n-icon><AddOutline /></n-icon>
-        Thêm mới
-      </button>
+    <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h1 class="ef-page-title" style="margin: 0;">Giao dịch</h1>
+      <div style="display: flex; gap: 8px;">
+        <button class="ef-btn ef-btn-secondary ef-btn-sm" style="display: flex; align-items: center; gap: 4px; padding: 6px 12px;" @click="showFilterModal = true">
+          <n-icon size="16"><FunnelOutline /></n-icon>
+          Bộ Lọc
+          <n-tag v-if="hasActiveFilters" size="tiny" type="warning" round :bordered="false" style="margin-left: 2px;">
+            Đang lọc
+          </n-tag>
+        </button>
+        <button class="ef-btn ef-btn-primary ef-btn-sm" style="display: flex; align-items: center; gap: 4px; padding: 6px 12px;" @click="router.push('/transactions/new')">
+          <n-icon size="16"><AddOutline /></n-icon>
+          Giao dịch
+        </button>
+      </div>
     </div>
 
-    <n-spin :show="txStore.loading">
+    <!-- Filter Modal -->
+    <n-modal v-model:show="showFilterModal">
+      <n-card
+        style="width: 95%; max-width: 420px; border-radius: 20px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); border: 1px solid var(--ef-border-light);"
+        title="Bộ lọc giao dịch"
+        :bordered="false"
+        size="medium"
+        role="dialog"
+        aria-modal="true"
+      >
+        <template #header-extra>
+          <span style="font-size: 1.2rem;">⚡</span>
+        </template>
+        
+        <div style="display: flex; flex-direction: column; gap: 20px; padding: 4px 0;">
+          <!-- Search input -->
+          <div>
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+              <span style="font-size: 1.1rem; color: var(--ef-primary);">🔍</span>
+              <label style="font-weight: 700; color: var(--ef-text); font-size: 0.95rem;">
+                Tìm kiếm tiêu đề hoặc ghi chú
+              </label>
+            </div>
+            <n-input v-model:value="searchQuery" placeholder="Nhập từ khóa cần tìm..." clearable size="large" style="border-radius: 10px;" />
+          </div>
+
+          <!-- Transaction Type filter -->
+          <div>
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+              <span style="font-size: 1.1rem; color: var(--ef-primary);">🏷️</span>
+              <label style="font-weight: 700; color: var(--ef-text); font-size: 0.95rem;">
+                Phân loại giao dịch
+              </label>
+            </div>
+            <n-radio-group v-model:value="transactionTypeFilter" size="large" style="width: 100%;">
+              <n-radio-button value="all" style="width: 33.33%; text-align: center; border-radius: 10px 0 0 10px;">Tất cả</n-radio-button>
+              <n-radio-button value="income" style="width: 33.33%; text-align: center;">Thu nhập</n-radio-button>
+              <n-radio-button value="expense" style="width: 33.34%; text-align: center; border-radius: 0 10px 10px 0;">Chi tiêu</n-radio-button>
+            </n-radio-group>
+          </div>
+
+          <!-- Date filters -->
+          <div>
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+              <span style="font-size: 1.1rem; color: var(--ef-primary);">📅</span>
+              <label style="font-weight: 700; color: var(--ef-text); font-size: 0.95rem;">
+                Khoảng thời gian
+              </label>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <n-date-picker v-model:value="startDate" type="date" placeholder="Từ ngày" clearable size="large" style="flex: 1; border-radius: 10px;" />
+              <span style="color: var(--ef-text-tertiary); font-weight: 600;">→</span>
+              <n-date-picker v-model:value="endDate" type="date" placeholder="Đến ngày" clearable size="large" style="flex: 1; border-radius: 10px;" />
+            </div>
+          </div>
+        </div>
+
+        <template #action>
+          <div style="display: flex; justify-content: space-between; gap: 12px; padding-top: 8px;">
+            <button class="ef-btn ef-btn-secondary" style="flex: 1; padding: 12px; border-radius: 12px; font-weight: 600;" @click="clearFilters">
+              Đặt lại
+            </button>
+            <button class="ef-btn ef-btn-primary" style="flex: 1.5; padding: 12px; border-radius: 12px; font-weight: 600;" @click="applyFilters">
+              Áp dụng bộ lọc
+            </button>
+          </div>
+        </template>
+      </n-card>
+    </n-modal>
+
+    <n-spin :show="txStore.loading && txStore.transactions.length === 0">
       <n-empty v-if="txStore.transactions.length === 0" description="Chưa có giao dịch nào" />
       <div v-else class="tx-list">
         <div 
@@ -106,6 +256,15 @@ const getIconComponent = (iconName: string | undefined | null) => {
           <div class="tx-item__amount" :class="tx.transaction_type === 'income' ? 'tx-item__amount--income' : 'tx-item__amount--expense'">
             {{ tx.transaction_type === 'income' ? '+' : '-' }}{{ formatMoney(tx.amount) }}₫
           </div>
+        </div>
+
+        <!-- Loading more indicator -->
+        <div v-if="loadingMore" style="display: flex; justify-content: center; align-items: center; padding: 20px 0;">
+          <n-spin size="small" />
+          <span style="margin-left: 8px; color: var(--ef-text-secondary); font-size: 0.9rem;">Đang tải thêm giao dịch...</span>
+        </div>
+        <div v-else-if="!txStore.hasMore && txStore.transactions.length > 0" style="text-align: center; padding: 20px 0; color: var(--ef-text-tertiary); font-size: 0.85rem;">
+          Đã hiển thị tất cả giao dịch gần đây
         </div>
       </div>
     </n-spin>

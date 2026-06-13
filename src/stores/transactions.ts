@@ -8,17 +8,27 @@ export const useTransactionsStore = defineStore('transactions', () => {
   const categories = ref<Category[]>([])
   const loading = ref(false)
   const lastWarning = ref<string | null>(null)
+  const hasMore = ref(true)
+  const total = ref(0)
 
   async function fetchCategories() {
     const { data } = await api.get('/categories')
     categories.value = data.data
   }
 
-  async function fetchTransactions(filters: Record<string, string> = {}) {
+  async function fetchTransactions(filters: Record<string, any> = {}, append = false) {
     loading.value = true
     try {
       const { data } = await api.get('/transactions', { params: filters })
-      transactions.value = data.data.transactions || []
+      const txList = data.data.transactions || []
+      total.value = data.data.total || 0
+      
+      if (append) {
+        transactions.value = [...transactions.value, ...txList]
+      } else {
+        transactions.value = txList
+      }
+      hasMore.value = transactions.value.length < total.value
     } finally {
       loading.value = false
     }
@@ -36,5 +46,5 @@ export const useTransactionsStore = defineStore('transactions', () => {
     transactions.value = transactions.value.filter((t) => t.id !== id)
   }
 
-  return { transactions, categories, loading, lastWarning, fetchCategories, fetchTransactions, createTransaction, deleteTransaction }
+  return { transactions, categories, loading, lastWarning, hasMore, total, fetchCategories, fetchTransactions, createTransaction, deleteTransaction }
 })

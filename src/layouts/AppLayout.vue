@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { NIcon, NBadge } from 'naive-ui'
+import { NIcon, NBadge, useNotification } from 'naive-ui'
 import {
   HomeOutline,
   WalletOutline,
@@ -20,9 +20,54 @@ const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
 const notifs = useNotificationsStore()
+const notification = useNotification()
+
+function connectWS() {
+  const token = localStorage.getItem('accessToken')
+  if (!token) return
+
+  const baseApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8787/api/v1'
+  const wsUrl = new URL(baseApiUrl)
+  wsUrl.pathname = wsUrl.pathname + '/ws'
+  wsUrl.protocol = wsUrl.protocol === 'https:' ? 'wss:' : 'ws:'
+  wsUrl.searchParams.set('token', token)
+
+  const socket = new WebSocket(wsUrl.toString())
+
+  socket.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data)
+      if (data.type === 'notification') {
+        const notif = data.data
+        // Push notification in real-time to store
+        notifs.notifications.unshift(notif)
+        
+        // Show premium SaaS-style desktop/toast notification UI popup
+        notification.info({
+          title: notif.title || 'Thông báo',
+          content: notif.content,
+          meta: notif.created_at,
+          duration: 5000,
+          keepAliveOnHover: true,
+        })
+      }
+    } catch (e) {
+      console.error('[WebSocket] Message parsing error:', e)
+    }
+  }
+
+  socket.onclose = () => {
+    setTimeout(() => {
+      if (localStorage.getItem('accessToken')) {
+        connectWS()
+      }
+    }, 5000)
+  }
+}
 
 onMounted(() => {
   notifs.fetchNotifications()
+  connectWS()
 })
 
 const sidebarItems = [

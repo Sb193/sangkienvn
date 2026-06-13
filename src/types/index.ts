@@ -70,6 +70,7 @@ export interface Transaction {
   payer_name?: string
   creator_name?: string
   group_name?: string
+  is_fund_debt?: number
 }
 
 export interface TransactionParticipant {
@@ -90,6 +91,9 @@ export interface CreateTransactionPayload {
   participants?: TransactionParticipant[]
   attachmentUrl?: string
   address?: string
+  isFundDebt?: boolean
+  isRepayment?: boolean
+  fundDebtId?: string
 }
 
 // ─── Group ─────────────────────────────────────────────────────────────────
