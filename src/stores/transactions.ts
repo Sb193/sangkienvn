@@ -19,7 +19,11 @@ export const useTransactionsStore = defineStore('transactions', () => {
   async function fetchTransactions(filters: Record<string, any> = {}, append = false) {
     loading.value = true
     try {
-      const { data } = await api.get('/transactions', { params: filters })
+      const params = { ...filters }
+      if (!params.groupId) {
+        params.personalOnly = 'true'
+      }
+      const { data } = await api.get('/transactions', { params })
       const txList = data.data.transactions || []
       total.value = data.data.total || 0
       
