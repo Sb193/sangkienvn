@@ -26,9 +26,9 @@ function connectWS() {
   const token = localStorage.getItem('accessToken')
   if (!token) return
 
-  const baseApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8787/api/v1'
-  const wsUrl = new URL(baseApiUrl)
-  wsUrl.pathname = wsUrl.pathname + '/ws'
+  // Strip trailing slash to avoid double-slash in pathname
+  const baseApiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8787/api/v1').replace(/\/+$/, '')
+  const wsUrl = new URL(baseApiUrl + '/ws')
   wsUrl.protocol = wsUrl.protocol === 'https:' ? 'wss:' : 'ws:'
   wsUrl.searchParams.set('token', token)
 
@@ -54,6 +54,11 @@ function connectWS() {
     } catch (e) {
       console.error('[WebSocket] Message parsing error:', e)
     }
+  }
+
+  socket.onerror = () => {
+    // Connection errors are non-fatal; onclose will trigger reconnect
+    console.warn('[WebSocket] Connection error — will retry in 5s')
   }
 
   socket.onclose = () => {
