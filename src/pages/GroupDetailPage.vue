@@ -838,7 +838,7 @@ const getIconComponent = (iconName: string | undefined | null) => {
               @positive-click="handleDeleteGroup"
               positive-text="Xóa nhóm"
               negative-text="Hủy"
-              positive-button-props="{ type: 'error' }"
+              :positive-button-props="{ type: 'error' }"
             >
               <template #trigger>
                 <button
