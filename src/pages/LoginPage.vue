@@ -1,8 +1,16 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessage } from 'naive-ui'
+import { useMessage, NIcon } from 'naive-ui'
 import { useAuthStore } from '@/stores/auth'
+import { 
+  MailOutline, 
+  LockClosedOutline, 
+  EyeOutline, 
+  EyeOffOutline, 
+  WarningOutline,
+  WalletOutline
+} from '@vicons/ionicons5'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -58,6 +66,8 @@ async function handleLogin() {
     
     if (errMsg === 'Invalid email or password') {
       errors.value.server = 'Tài khoản hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.'
+    } else if (errMsg === 'Email has not been verified yet') {
+      errors.value.server = 'Tài khoản chưa được xác thực email. Vui lòng kiểm tra hộp thư của bạn để xác thực.'
     } else if (errMsg === 'Email and password are required') {
       errors.value.server = 'Vui lòng điền đầy đủ Email và Mật khẩu.'
     } else {
@@ -74,7 +84,7 @@ async function handleLogin() {
       <div class="auth-card ef-card">
         <div class="auth-header">
           <div class="auth-logo-wrapper">
-            <span class="auth-logo">💸</span>
+            <n-icon class="auth-logo" :size="32" color="var(--ef-primary)"><WalletOutline /></n-icon>
           </div>
           <h1 class="auth-title">ExpenseFlow</h1>
           <p class="auth-subtitle">Đăng nhập để bắt đầu quản lý chi tiêu</p>
@@ -82,7 +92,7 @@ async function handleLogin() {
 
         <!-- Server Error Alert -->
         <div v-if="errors.server" class="auth-alert error-alert animate-shake">
-          <span class="alert-icon">⚠️</span>
+          <n-icon class="alert-icon" :size="18"><WarningOutline /></n-icon>
           <span class="alert-message">{{ errors.server }}</span>
         </div>
 
@@ -90,7 +100,7 @@ async function handleLogin() {
           <div class="form-group" :class="{ 'has-error': errors.email }">
             <label class="form-label">Email</label>
             <div class="input-wrapper">
-              <span class="input-icon">✉️</span>
+              <n-icon class="input-icon" :size="18"><MailOutline /></n-icon>
               <input 
                 v-model="form.email" 
                 type="text" 
@@ -108,7 +118,7 @@ async function handleLogin() {
               <router-link to="/forgot-password" class="forgot-link">Quên mật khẩu?</router-link>
             </div>
             <div class="input-wrapper">
-              <span class="input-icon">🔒</span>
+              <n-icon class="input-icon" :size="18"><LockClosedOutline /></n-icon>
               <input 
                 v-model="form.password" 
                 :type="showPassword ? 'text' : 'password'" 
@@ -116,8 +126,11 @@ async function handleLogin() {
                 class="form-input"
                 @input="clearError('password')"
               />
-              <button type="button" class="toggle-password" @click="showPassword = !showPassword">
-                {{ showPassword ? '👁️' : '🙈' }}
+              <button type="button" class="toggle-password" @click="showPassword = !showPassword" style="display: flex; align-items: center;">
+                <n-icon :size="18">
+                  <EyeOutline v-if="showPassword" />
+                  <EyeOffOutline v-else />
+                </n-icon>
               </button>
             </div>
             <span v-if="errors.password" class="error-text">{{ errors.password }}</span>

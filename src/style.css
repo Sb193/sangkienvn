@@ -264,3 +264,23 @@ img { max-width: 100%; height: auto; display: block; }
   width: 100%;
 }
 
+/* ─── Naive UI Custom Toast Customizations ────────────────────────────────── */
+.n-message {
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(226, 232, 240, 0.5) !important;
+}
+
+.n-notification {
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(226, 232, 240, 0.5) !important;
+}
+
+/* Dark mode compatibility override */
+html.dark .n-message,
+html.dark .n-notification {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+

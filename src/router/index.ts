@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const routes: RouteRecordRaw[] = [
   // ─── Auth (No Layout) ───────────────────────────────────────────────────
@@ -25,6 +26,12 @@ const routes: RouteRecordRaw[] = [
     name: 'VerifyEmail',
     component: () => import('@/pages/VerifyEmailPage.vue'),
     meta: { guest: true },
+  },
+  {
+    path: '/verify-email-pending',
+    name: 'VerifyEmailPending',
+    component: () => import('@/pages/VerifyEmailPendingPage.vue'),
+    meta: { requiresAuth: true },
   },
 
   // ─── App (Main Layout) ─────────────────────────────────────────────────
@@ -55,10 +62,41 @@ const router = createRouter({
 })
 
 // Navigation guard
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const token = localStorage.getItem('accessToken')
-  if (to.meta.requiresAuth && !token) return next('/login')
-  if (to.meta.guest && token) return next('/')
+  
+  if (to.meta.requiresAuth && !token) {
+    return next('/login')
+  }
+
+  if (token) {
+    const authStore = useAuthStore()
+    
+    // Fetch profile if missing
+    if (!authStore.user) {
+      try {
+        await authStore.fetchProfile()
+      } catch {
+        return next('/login')
+      }
+    }
+    
+    // Check if email verified
+    if (authStore.user && !authStore.user.email_verified_at) {
+      if (to.path !== '/verify-email-pending' && to.path !== '/verify-email') {
+        return next('/verify-email-pending')
+      }
+    } else {
+      if (to.path === '/verify-email-pending') {
+        return next('/')
+      }
+    }
+
+    if (to.meta.guest) {
+      return next('/')
+    }
+  }
+
   next()
 })
 

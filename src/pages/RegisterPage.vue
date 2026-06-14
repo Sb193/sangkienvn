@@ -1,8 +1,17 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessage } from 'naive-ui'
+import { useMessage, NIcon } from 'naive-ui'
 import { useAuthStore } from '@/stores/auth'
+import { 
+  MailOutline, 
+  LockClosedOutline, 
+  EyeOutline, 
+  EyeOffOutline, 
+  WarningOutline,
+  WalletOutline,
+  PersonOutline
+} from '@vicons/ionicons5'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -85,7 +94,7 @@ async function handleRegister() {
       <div class="auth-card ef-card">
         <div class="auth-header">
           <div class="auth-logo-wrapper">
-            <span class="auth-logo">💸</span>
+            <n-icon class="auth-logo" :size="32" color="var(--ef-primary)"><WalletOutline /></n-icon>
           </div>
           <h1 class="auth-title">Đăng ký tài khoản</h1>
           <p class="auth-subtitle">Bắt đầu theo dõi và quản lý chi tiêu hiệu quả</p>
@@ -93,7 +102,7 @@ async function handleRegister() {
 
         <!-- Server Error Alert -->
         <div v-if="errors.server" class="auth-alert error-alert animate-shake">
-          <span class="alert-icon">⚠️</span>
+          <n-icon class="alert-icon" :size="18"><WarningOutline /></n-icon>
           <span class="alert-message">{{ errors.server }}</span>
         </div>
 
@@ -101,7 +110,7 @@ async function handleRegister() {
           <div class="form-group" :class="{ 'has-error': errors.fullName }">
             <label class="form-label">Họ và tên</label>
             <div class="input-wrapper">
-              <span class="input-icon">👤</span>
+              <n-icon class="input-icon" :size="18"><PersonOutline /></n-icon>
               <input 
                 v-model="form.fullName" 
                 type="text" 
@@ -116,7 +125,7 @@ async function handleRegister() {
           <div class="form-group" :class="{ 'has-error': errors.email }">
             <label class="form-label">Email</label>
             <div class="input-wrapper">
-              <span class="input-icon">✉️</span>
+              <n-icon class="input-icon" :size="18"><MailOutline /></n-icon>
               <input 
                 v-model="form.email" 
                 type="text" 
@@ -131,7 +140,7 @@ async function handleRegister() {
           <div class="form-group" :class="{ 'has-error': errors.password }">
             <label class="form-label">Mật khẩu</label>
             <div class="input-wrapper">
-              <span class="input-icon">🔒</span>
+              <n-icon class="input-icon" :size="18"><LockClosedOutline /></n-icon>
               <input 
                 v-model="form.password" 
                 :type="showPassword ? 'text' : 'password'" 
@@ -139,8 +148,11 @@ async function handleRegister() {
                 class="form-input"
                 @input="clearError('password')"
               />
-              <button type="button" class="toggle-password" @click="showPassword = !showPassword">
-                {{ showPassword ? '👁️' : '🙈' }}
+              <button type="button" class="toggle-password" @click="showPassword = !showPassword" style="display: flex; align-items: center;">
+                <n-icon :size="18">
+                  <EyeOutline v-if="showPassword" />
+                  <EyeOffOutline v-else />
+                </n-icon>
               </button>
             </div>
             <span v-if="errors.password" class="error-text">{{ errors.password }}</span>

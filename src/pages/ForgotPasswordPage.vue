@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessage } from 'naive-ui'
+import { useMessage, NIcon } from 'naive-ui'
+import { 
+  MailOutline, 
+  LockClosedOutline, 
+  KeyOutline, 
+  WarningOutline 
+} from '@vicons/ionicons5'
 import api from '@/services/api'
 
 const router = useRouter()
@@ -115,7 +121,7 @@ async function handleResetPassword() {
 
         <!-- Server Error Alert -->
         <div v-if="errors.server" class="auth-alert error-alert animate-shake">
-          <span class="alert-icon">⚠️</span>
+          <n-icon class="alert-icon" :size="18"><WarningOutline /></n-icon>
           <span class="alert-message">{{ errors.server }}</span>
         </div>
 
@@ -124,7 +130,7 @@ async function handleResetPassword() {
           <div class="form-group" :class="{ 'has-error': errors.email }">
             <label class="form-label">Email tài khoản</label>
             <div class="input-wrapper">
-              <span class="input-icon">✉️</span>
+              <n-icon class="input-icon" :size="18"><MailOutline /></n-icon>
               <input 
                 v-model="email" 
                 type="text" 
@@ -147,7 +153,7 @@ async function handleResetPassword() {
           <div class="form-group" :class="{ 'has-error': errors.token }">
             <label class="form-label">Mã xác thực (OTP)</label>
             <div class="input-wrapper">
-              <span class="input-icon">🔑</span>
+              <n-icon class="input-icon" :size="18"><KeyOutline /></n-icon>
               <input 
                 v-model="token" 
                 type="text" 
@@ -163,7 +169,7 @@ async function handleResetPassword() {
           <div class="form-group" :class="{ 'has-error': errors.newPassword }">
             <label class="form-label">Mật khẩu mới</label>
             <div class="input-wrapper">
-              <span class="input-icon">🔒</span>
+              <n-icon class="input-icon" :size="18"><LockClosedOutline /></n-icon>
               <input 
                 v-model="newPassword" 
                 type="password" 
@@ -178,7 +184,7 @@ async function handleResetPassword() {
           <div class="form-group" :class="{ 'has-error': errors.confirmPassword }">
             <label class="form-label">Xác nhận mật khẩu mới</label>
             <div class="input-wrapper">
-              <span class="input-icon">🔒</span>
+              <n-icon class="input-icon" :size="18"><LockClosedOutline /></n-icon>
               <input 
                 v-model="confirmPassword" 
                 type="password" 

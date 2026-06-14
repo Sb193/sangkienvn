@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { NIcon } from 'naive-ui'
+import { CheckmarkCircleOutline, WarningOutline } from '@vicons/ionicons5'
 import api from '@/services/api'
 
 const route = useRoute()
@@ -46,7 +48,9 @@ onMounted(async () => {
 
         <!-- Success State -->
         <div v-else-if="status === 'success'" class="status-container animate-scale">
-          <div class="status-icon success-icon">✅</div>
+          <div class="status-icon success-icon" style="color: var(--ef-success); display: flex; align-items: center; justify-content: center;">
+            <n-icon :size="56"><CheckmarkCircleOutline /></n-icon>
+          </div>
           <h2 class="status-title">Xác thực thành công! 🎉</h2>
           <p class="status-text">Tài khoản của bạn đã được xác thực thành công. Bạn đã có thể bắt đầu sử dụng đầy đủ các tính năng của ExpenseFlow.</p>
           <router-link to="/login" class="action-btn ef-btn ef-btn-primary">Đăng nhập ngay</router-link>
@@ -54,7 +58,9 @@ onMounted(async () => {
 
         <!-- Error State -->
         <div v-else class="status-container animate-scale">
-          <div class="status-icon error-icon">⚠️</div>
+          <div class="status-icon error-icon" style="color: var(--ef-danger); display: flex; align-items: center; justify-content: center;">
+            <n-icon :size="56"><WarningOutline /></n-icon>
+          </div>
           <h2 class="status-title">Xác thực thất bại</h2>
           <p class="status-text error-msg">{{ errorMessage }}</p>
           <p class="status-text">Liên kết xác thực có thể đã hết hạn hoặc không hợp lệ. Vui lòng kiểm tra lại email hoặc liên hệ quản trị viên.</p>
