@@ -14,7 +14,7 @@ import {
   GameControllerOutline, CartOutline, MedkitOutline, BookOutline,
   PricetagOutline, TrashOutline, CalendarOutline, LocationOutline,
   PeopleOutline, WalletOutline, DocumentTextOutline, CameraOutline,
-  FunnelOutline, LogOutOutline
+  FunnelOutline, LogOutOutline, SearchOutline, PersonOutline
 } from '@vicons/ionicons5'
 import api, { uploadApi } from '@/services/api'
 import type { GroupFund, FundTransaction } from '@/types'
@@ -589,14 +589,14 @@ const getIconComponent = (iconName: string | undefined | null) => {
               aria-modal="true"
             >
               <template #header-extra>
-                <span style="font-size: 1.2rem;">👥</span>
+                <n-icon size="20" style="color: var(--ef-primary);"><PeopleOutline /></n-icon>
               </template>
 
               <div style="display: flex; flex-direction: column; gap: 20px; padding: 4px 0;">
                 <!-- Search -->
                 <div>
-                  <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
-                    <span style="font-size: 1.1rem; color: var(--ef-primary);">🔍</span>
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <n-icon size="18" style="color: var(--ef-primary); display: flex; align-items: center;"><SearchOutline /></n-icon>
                     <label style="font-weight: 700; color: var(--ef-text); font-size: 0.95rem;">
                       Tìm kiếm tiêu đề hoặc ghi chú
                     </label>
@@ -606,8 +606,8 @@ const getIconComponent = (iconName: string | undefined | null) => {
 
                 <!-- Transaction Type -->
                 <div>
-                  <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
-                    <span style="font-size: 1.1rem; color: var(--ef-primary);">🏷️</span>
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <n-icon size="18" style="color: var(--ef-primary); display: flex; align-items: center;"><PricetagOutline /></n-icon>
                     <label style="font-weight: 700; color: var(--ef-text); font-size: 0.95rem;">
                       Phân loại giao dịch
                     </label>
@@ -621,8 +621,8 @@ const getIconComponent = (iconName: string | undefined | null) => {
 
                 <!-- Payer Filter -->
                 <div>
-                  <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
-                    <span style="font-size: 1.1rem; color: var(--ef-primary);">👤</span>
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <n-icon size="18" style="color: var(--ef-primary); display: flex; align-items: center;"><PersonOutline /></n-icon>
                     <label style="font-weight: 700; color: var(--ef-text); font-size: 0.95rem;">
                       Người thanh toán
                     </label>
@@ -637,8 +637,8 @@ const getIconComponent = (iconName: string | undefined | null) => {
 
                 <!-- Date filters -->
                 <div>
-                  <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
-                    <span style="font-size: 1.1rem; color: var(--ef-primary);">📅</span>
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <n-icon size="18" style="color: var(--ef-primary); display: flex; align-items: center;"><CalendarOutline /></n-icon>
                     <label style="font-weight: 700; color: var(--ef-text); font-size: 0.95rem;">
                       Khoảng thời gian
                     </label>
