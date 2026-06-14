@@ -63,6 +63,10 @@ const router = createRouter({
 
 // Navigation guard
 router.beforeEach(async (to, _from, next) => {
+  if (to.path === '/verify-email') {
+    return next()
+  }
+
   const token = localStorage.getItem('accessToken')
   
   if (to.meta.requiresAuth && !token) {

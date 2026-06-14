@@ -3,16 +3,20 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { NIcon } from 'naive-ui'
 import { CheckmarkCircleOutline, WarningOutline } from '@vicons/ionicons5'
+import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
 
 const route = useRoute()
+const authStore = useAuthStore()
 
 // States: 'verifying' | 'success' | 'error'
 const status = ref<'verifying' | 'success' | 'error'>('verifying')
 const errorMessage = ref('')
+const isLoggedIn = ref(false)
 
 onMounted(async () => {
   const token = route.query.token as string
+  isLoggedIn.value = !!localStorage.getItem('accessToken')
 
   if (!token) {
     status.value = 'error'
@@ -23,6 +27,11 @@ onMounted(async () => {
   try {
     await api.post('/auth/verify-email', { token })
     status.value = 'success'
+    
+    // Update profile if logged in to refresh email_verified_at state
+    if (isLoggedIn.value) {
+      await authStore.fetchProfile()
+    }
   } catch (err: any) {
     status.value = 'error'
     errorMessage.value = err.response?.data?.error?.message || err.message || 'Xác thực tài khoản thất bại'
@@ -53,7 +62,8 @@ onMounted(async () => {
           </div>
           <h2 class="status-title">Xác thực thành công! 🎉</h2>
           <p class="status-text">Tài khoản của bạn đã được xác thực thành công. Bạn đã có thể bắt đầu sử dụng đầy đủ các tính năng của ExpenseFlow.</p>
-          <router-link to="/login" class="action-btn ef-btn ef-btn-primary">Đăng nhập ngay</router-link>
+          <router-link v-if="isLoggedIn" to="/" class="action-btn ef-btn ef-btn-primary">Đi tới bảng điều khiển</router-link>
+          <router-link v-else to="/login" class="action-btn ef-btn ef-btn-primary">Đăng nhập ngay</router-link>
         </div>
 
         <!-- Error State -->
